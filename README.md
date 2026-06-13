@@ -336,6 +336,12 @@ The execution bundle targets five distinct contextual templates based on the spe
 | `publisher_subscription_created` | API Resource Owner | Updates product engineering managers when consumers mount applications to their specific endpoints. |
 | `developer_subscription_created` | Requesting Developer | Explains technical token usage patterns and endpoint addressing configurations. |
 
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185837" src="https://github.com/user-attachments/assets/8877ac46-0dc5-4d2f-876d-157d69e59441" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185747" src="https://github.com/user-attachments/assets/9782d5dc-2438-4cc7-b956-7f0e0160e193" />
+<img width="1917" height="991" alt="Screenshot 2026-06-13 185723" src="https://github.com/user-attachments/assets/c8c791cb-dd0a-4025-be23-180f63ac52f2" />
+<img width="1917" height="990" alt="Screenshot 2026-06-13 185659" src="https://github.com/user-attachments/assets/acb286c5-aa6c-426b-b016-8da4bdb4b013" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185900" src="https://github.com/user-attachments/assets/295ff0bd-c191-4ae5-8c2e-1bd5f42aa5f8" />
+
 ---
 
 # 📮 SMTP Development Setup (MailHog)
@@ -392,6 +398,13 @@ Open the generated visualization tree to evaluate edge coverage profiles:
 ```text
 target/site/jacoco/index.html
 ```
+
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185607" src="https://github.com/user-attachments/assets/ee097a6b-1b6b-4879-a3ed-b56241b6379a" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185510" src="https://github.com/user-attachments/assets/60a1c485-b8a8-4aa1-aec2-d37a9f5520d3" />
+<img width="1917" height="992" alt="Screenshot 2026-06-13 185434" src="https://github.com/user-attachments/assets/e3b38a12-8757-4c61-b9f6-8f835c7551b8" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185354" src="https://github.com/user-attachments/assets/b4f8384f-113b-47f7-95f2-397557e0c403" />
+<img width="1917" height="991" alt="Screenshot 2026-06-13 185218" src="https://github.com/user-attachments/assets/209bf771-5b63-4a3a-b7d6-edc4e5eabc10" />
+
 
 ---
 
