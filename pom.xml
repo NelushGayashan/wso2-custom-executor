@@ -11,21 +11,14 @@
 
     <name>WSO2 Custom Workflow Extensions</name>
 
-    <!-- ===== PROPERTIES ===== -->
     <properties>
-        <!-- Java source compatibility level -->
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <!-- Java target compatibility level -->
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <!-- Project source file encoding -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- Version of WSO2 Carbon API Manager components -->
         <carbon.apimgt.version>9.28.0</carbon.apimgt.version>
-        <!-- Version of WSO2 Carbon kernel components -->
         <carbon.kernel.version>4.6.3</carbon.kernel.version>
     </properties>
 
-    <!-- ===== REPOSITORIES ===== -->
     <repositories>
         <repository>
             <id>wso2-nexus</id>
@@ -37,9 +30,7 @@
         </repository>
     </repositories>
 
-    <!-- ===== DEPENDENCIES ===== -->
     <dependencies>
-        <!-- WSO2 API Manager implementation classes (workflow, publishers, etc.) -->
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.impl</artifactId>
@@ -47,7 +38,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- WSO2 API Manager public API interfaces -->
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.api</artifactId>
@@ -55,7 +45,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- WSO2 Carbon user core for userstore and realm operations -->
         <dependency>
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.user.core</artifactId>
@@ -63,7 +52,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- WSO2 Carbon utilities (configuration, logging helpers, etc.) -->
         <dependency>
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.utils</artifactId>
@@ -71,7 +59,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Apache Commons Logging facade (used internally by Carbon) -->
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
@@ -79,7 +66,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JavaMail API for sending email notifications from workflows -->
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
@@ -87,7 +73,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JUnit 5 engine for unit testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -95,7 +80,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Mockito core for mocking dependencies in tests -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -103,7 +87,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Mockito inline for mocking final classes and static methods -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
@@ -112,21 +95,18 @@
         </dependency>
     </dependencies>
 
-    <!-- ===== BUILD PLUGINS ===== -->
     <build>
         <plugins>
-            <!-- Maven Compiler Plugin: configures Java 1.8 source/target -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
 
-            <!-- Maven Surefire Plugin: runs unit tests, configures JVM args for JaCoCo -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -136,7 +116,6 @@
                 </configuration>
             </plugin>
 
-            <!-- JaCoCo Maven Plugin: measures code coverage during tests -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -160,7 +139,6 @@
                 </executions>
             </plugin>
 
-            <!-- Maven Bundle Plugin (Apache Felix): creates an OSGi bundle from the project -->
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
