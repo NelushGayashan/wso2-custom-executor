@@ -113,7 +113,7 @@ WSO2 API Manager Runtime Core
 
 # 📂 Project Structure
 
-```text
+```plaintext
 wso2-custom-executor
 │
 ├── pom.xml                        # Strict OSGi manifest generation instructions
@@ -132,10 +132,10 @@ wso2-custom-executor
 │   └── test
 │       └── java
 │           └── com/mycompany/wso2/workflow
-│               ├── CustomApplicationExecutorTest.java
-│               ├── CustomSubscriptionExecutorTest.java
-│               ├── EmailUtilTest.java
-│               └── HtmlTemplatesTest.java
+│               ├── CustomApplicationExecutorTest.java  # Comprehensive Application Unit Tests
+│               └── CustomSubscriptionExecutorTest.java # Comprehensive Subscription Unit Tests
+│               ├── EmailUtilTest.java                  # Verifies Async Email Transfer Resiliency
+│               └── HtmlTemplatesTest.java              # Exhaustive Layout Engine Sanitization Checks
 │
 └── target
     └── com.mycompany.wso2.workflow-1.0.0.jar     # Compiled deployable OSGi bundle
@@ -145,20 +145,20 @@ wso2-custom-executor
 
 When building out new layout components or data parsers, maintain awareness regarding the data structure differences between WSO2's native workflow Data Transfer Objects:
 
-1. Application Creation Mappings (ApplicationWorkflowDTO)
-   The application payload encapsulates information inside a nested complex model tree layer. You must navigate into the parent object model to pull primitive tracking fields:
+### Application Creation Mappings (ApplicationWorkflowDTO)
+The application payload encapsulates information inside a nested complex model tree layer. You must navigate into the parent object model to pull primitive tracking fields:
 
-```Java
+```java
 ApplicationWorkflowDTO appDTO = (ApplicationWorkflowDTO) workflowDTO;
 model.put("applicationName", appDTO.getApplication().getName());
 model.put("tier", appDTO.getApplication().getTier());
 model.put("callbackUrl", appDTO.getApplication().getCallbackUrl());
+Subscription Creation Mappings (SubscriptionWorkflowDTO)
 ```
 
-2. Subscription Creation Mappings (SubscriptionWorkflowDTO)
-   The subscription payload exposes structural entity keys flattened directly out of the base metadata instance. Attempting to traverse an active .getApplication() layer here will fail:
+### The subscription payload exposes structural entity keys flattened directly out of the base metadata instance. Attempting to traverse an active .getApplication() layer here will fail:
 
-```Java
+```java
 SubscriptionWorkflowDTO subDTO = (SubscriptionWorkflowDTO) workflowDTO;
 model.put("applicationName", subDTO.getApplicationName());
 model.put("apiName", subDTO.getApiName());
@@ -166,12 +166,16 @@ model.put("apiVersion", subDTO.getApiVersion());
 model.put("tier", subDTO.getTier());
 ```
 
-# 🔄 Workflow Execution Flow
+[!WARNING]
+Workflow Reference Parsing Restriction: WSO2's internal workflow parsing layers parse the workflowReference parameter directly into numerical types using routines like Integer.parseInt(). Both runtime values and unit mock states (mockWorkflowDTO.getWorkflowReference()) must enforce purely numeric configurations (e.g., "998877") to avoid severe unhandled runtime NumberFormatException exceptions.
+
+🔄 Workflow Execution Flow
+
 The sequence diagrams below present the structural ordering logic embedded across both notification variants. The key architectural invariant is: Database commits occur before notification resolution blocks are evaluated.
 
-## Application Creation Chain
+### Application Creation Chain
 
-```text
+```plaintext
 DevPortal          CustomApplicationExecutor      WSO2 Core Engine        EmailUtil Worker
     │                          │                          │                      │
     │─── Create App ──────────>│                          │                      │
@@ -186,9 +190,9 @@ DevPortal          CustomApplicationExecutor      WSO2 Core Engine        EmailU
     │<── Return HTTP 201 ──────│                                                 │── [SMTP Tx]
 ```
 
-## Subscription Creation Chain
+### Subscription Creation Chain
 
-```text
+```plaintext
 DevPortal         CustomSubscriptionExecutor     WSO2 Core Engine        EmailUtil Worker
     │                          │                          │                      │
     │─── Create Subscription ─>│                          │                      │
@@ -207,53 +211,56 @@ DevPortal         CustomSubscriptionExecutor     WSO2 Core Engine        EmailUt
 
 # 🛠 Technology Stack
 
-- **Compiler Engine Target:** Java SE 17 (Native Java 17 bytecode compliance utilizing modern language features like native Text Blocks).
-- **Runtime Environments:** Verified on Java 11 & Java 17 under production WSO2 APIM 4.2.0 servers.
-- **Build Architecture:** Maven 3.6+ using the Apache Felix `maven-bundle-plugin` for OSGi packaging.
-- **Underlying Mail Provider:** Uses the runtime’s native `javax.mail` package exported by the core application server.
-- **Test Platform:** JUnit 5 framework with Mockito Core for simulation and mocking.
+- **Compiler Engine Target**: Java SE 17 (Native Java 17 bytecode compliance utilizing modern language features like native Text Blocks).
+- **Runtime Environments**: Verified on Java 11 & Java 17 under production WSO2 APIM 4.2.0 servers.
+- **Build Architecture**: Maven 3.6+ using the Apache Felix maven-bundle-plugin for OSGi packaging.
+- **Underlying Mail Provider**: Uses the runtime’s native javax.mail package exported by the core application server.
+- **Test Platform**: JUnit 5 framework with Mockito Core for simulation and mocking.
 
 # 📋 Prerequisites
+
 Before running compilation sequences, ensure your environment meets the following specifications:
 
 - Java Development Kit (JDK) 17 installed with standard environment paths configured.
 - Apache Maven 3.6.3 or newer available on your execution path.
 - Access to a target instance of WSO2 API Manager 4.2.0.
-- Docker Engine or an alternative mechanism to deploy a MailHog utility instance for verification cycles.  
+- Docker Engine or an alternative mechanism to deploy a MailHog utility instance for verification cycles.
 
 # ⚡ Quick Start
 
-1. Clone & Access Repository
-````bash
-git clone [https://github.com/your-org/wso2-custom-executor.git](https://github.com/your-org/wso2-custom-executor.git)
+### Clone & Access Repository
+
+```bash
+git clone https://github.com/your-org/wso2-custom-executor.git
 cd wso2-custom-executor
-````
+```
 
-2. Run Compilation Pipelines 
-   Execute standard verification and packaging clean steps to build out your binary:
-````bash
+### Run Compilation Pipelines
+Execute standard verification and packaging clean steps to build out your binary:
+
+```bash
 mvn clean package
-````
+```
 
-3. Verify Isolation Compliance
-   Confirm that no external template parsing engine dependencies have leaked into your compiled archive:
-````bash
+### Verify Isolation Compliance
+Confirm that no external template parsing engine dependencies have leaked into your compiled archive:
+
+```bash
 # Windows
 jar tf target/com.mycompany.wso2.workflow-1.0.0.jar | findstr thymeleaf
 
 # Linux / macOS
 jar tf target/com.mycompany.wso2.workflow-1.0.0.jar | grep thymeleaf
-````
+```
 
-> Expected Outcome: The pipeline should pass cleanly with zero terminal output, confirming that only native company classes populate the artifact.
+**Expected Outcome**: The pipeline should pass cleanly with zero terminal output, confirming that only native corporate classes populate the artifact.
 
 # 🚀 Deployment
 
 Follow this exact structural ordering to deploy update binaries cleanly onto active cluster instances:
 
-## 1. Purge Active Artifact Mappings
+**1. Purge Active Artifact Mappings**
 
-### PowerShell
 ```powershell
 # Windows PowerShell
 Remove-Item "${ENV:APIM_HOME}/repository/components/dropins/com.mycompany.wso2.workflow-1.0.0.jar" -ErrorAction SilentlyContinue
@@ -262,10 +269,9 @@ Remove-Item "${ENV:APIM_HOME}/repository/components/dropins/com.mycompany.wso2.w
 rm -f $APIM_HOME/repository/components/dropins/com.mycompany.wso2.workflow-1.0.0.jar
 ```
 
-## 2. Wipe Active Container Runtime Caches
+**2. Wipe Active Container Runtime Caches**
 To prevent class tracking discrepancies or stale metadata issues across Equinox runtimes, explicitly purge transient file trees before firing up node updates:
 
-### PowerShell
 ```powershell
 # Windows PowerShell
 Remove-Item -Recurse -Force "${ENV:APIM_HOME}/work/osgi/*"
@@ -276,9 +282,8 @@ rm -rf $APIM_HOME/work/osgi/*
 rm -rf $APIM_HOME/tmp/*
 ```
 
-## 3. Inject New Distribution Target Binaries
+**3. Inject New Distribution Target Binaries**
 
-### PowerShell
 ```powershell
 # Windows PowerShell
 Copy-Item "target/com.mycompany.wso2.workflow-1.0.0.jar" "${ENV:APIM_HOME}/repository/components/dropins/"
@@ -287,10 +292,9 @@ Copy-Item "target/com.mycompany.wso2.workflow-1.0.0.jar" "${ENV:APIM_HOME}/repos
 cp target/com.mycompany.wso2.workflow-1.0.0.jar $APIM_HOME/repository/components/dropins/
 ```
 
-## 4. Execute Clean Node Restoration Sequences
+**4. Execute Clean Node Restoration Sequences**
 
-### PowerShell
-```powershell
+```bash
 # Windows Server Command Core
 cd %APIM_HOME%\bin
 api-manager.bat --clean
@@ -302,18 +306,18 @@ cd $APIM_HOME/bin
 
 # ⚙ Configuration
 
-## 1. Production Integration Declarations (deployment.toml)
+**1. Production Integration Declarations (deployment.toml)**
+Append the following namespace structure directly onto your deployment definition tree file (<APIM_HOME>/repository/conf/deployment.toml) to register class injection hooks:
 
-Append the following namespace structure directly onto your deployment definition tree file (`<APIM_HOME>/repository/conf/deployment.toml`) to register class injection hooks:
-```ini
+```toml
 [apim.workflow_extensions]
 application_creation = "com.mycompany.wso2.workflow.CustomApplicationExecutor"
 subscription_creation = "com.mycompany.wso2.workflow.CustomSubscriptionExecutor"
 ```
 
-## 2. Underlying XML Fallback Registries (workflow-extensions.xml)
+**2. Underlying XML Fallback Registries (workflow-extensions.xml)**
+If your structural environment references older explicit file configurations directly, alter the execution node attributes within <APIM_HOME>/repository/conf/workflow-extensions.xml:
 
-If your structural environment references older explicit file configurations directly, alter the execution node attributes within `<APIM_HOME>/repository/conf/workflow-extensions.xml`:
 ```xml
 <workFlowExtensions>
    <applicationCreation
@@ -336,21 +340,11 @@ The execution bundle targets five distinct contextual templates based on the spe
 | `publisher_subscription_created` | API Resource Owner | Updates product engineering managers when consumers mount applications to their specific endpoints. |
 | `developer_subscription_created` | Requesting Developer | Explains technical token usage patterns and endpoint addressing configurations. |
 
-<img width="1917" height="987" alt="Screenshot 2026-06-13 185837" src="https://github.com/user-attachments/assets/8877ac46-0dc5-4d2f-876d-157d69e59441" />
-<img width="1917" height="987" alt="Screenshot 2026-06-13 185747" src="https://github.com/user-attachments/assets/9782d5dc-2438-4cc7-b956-7f0e0160e193" />
-<img width="1917" height="991" alt="Screenshot 2026-06-13 185723" src="https://github.com/user-attachments/assets/c8c791cb-dd0a-4025-be23-180f63ac52f2" />
-<img width="1917" height="990" alt="Screenshot 2026-06-13 185659" src="https://github.com/user-attachments/assets/acb286c5-aa6c-426b-b016-8da4bdb4b013" />
-<img width="1917" height="987" alt="Screenshot 2026-06-13 185900" src="https://github.com/user-attachments/assets/295ff0bd-c191-4ae5-8c2e-1bd5f42aa5f8" />
-
----
-
 # 📮 SMTP Development Setup (MailHog)
 
 To simplify developer verification runs without routing notifications through live enterprise relays, leverage an isolated containerized MailHog deployment.
 
-## 1. Fire Up Local Interceptor Services
-
-### Bash
+**1. Fire Up Local Interceptor Services**
 
 ```bash
 docker run -d \
@@ -360,97 +354,60 @@ docker run -d \
   mailhog/mailhog
 ```
 
-## 2. Network Boundary Coordinates
+**2. Network Boundary Coordinates**
 
-**Inbound Transfer Endpoint (SMTP):**
-```text
-localhost:1025
-```
+Inbound Transfer Endpoint (SMTP): localhost:1025
 
-**Management Inspection Interface (HTTP Portal):**
-```text
-http://localhost:8025
-```
-
----
+Management Inspection Interface (HTTP Portal): http://localhost:8025
 
 # 🧪 Testing
 
-The solution provides a decoupled layout and pipeline test verification tree. The execution tests include advanced static system mocking sequences to simulate WSO2 identity claim resolutions and validate string-building layers safely.
+The solution provides a fully decoupled unit and pipeline test framework. Both test files (CustomApplicationExecutorTest and CustomSubscriptionExecutorTest) feature clean Javadoc tracking headers and leverage advanced static system mocking via Mockito to simulate WSO2 identity claim resolutions safely. Additional tests (EmailUtilTest and HtmlTemplatesTest) provide robust coverage for template rendering capabilities and asynchronous error handling.
 
-## 1. Run Complete Verification Frameworks
+[!NOTE]
+Defensive Mocking Realities: Unit tests explicitly supply numeric values like "998877" and "776655" for workflowReference fields. This completely isolates code behavior and mirrors production configurations where the core parser handles reference IDs numerically.
 
-### Bash
+**1. Run Complete Verification Frameworks**
 
 ```bash
 mvn clean test
 ```
+**2. Extract Comprehensive JaCoCo Reporting Matrices**
 
-## 2. Extract Comprehensive JaCoCo Reporting Matrices
-
-### Bash
 ```bash
 mvn verify
 ```
-
+`
 Open the generated visualization tree to evaluate edge coverage profiles:
 
-```text
+```plaintext
 target/site/jacoco/index.html
 ```
-
-<img width="1917" height="987" alt="Screenshot 2026-06-13 185607" src="https://github.com/user-attachments/assets/ee097a6b-1b6b-4879-a3ed-b56241b6379a" />
-<img width="1917" height="987" alt="Screenshot 2026-06-13 185510" src="https://github.com/user-attachments/assets/60a1c485-b8a8-4aa1-aec2-d37a9f5520d3" />
-<img width="1917" height="992" alt="Screenshot 2026-06-13 185434" src="https://github.com/user-attachments/assets/e3b38a12-8757-4c61-b9f6-8f835c7551b8" />
-<img width="1917" height="987" alt="Screenshot 2026-06-13 185354" src="https://github.com/user-attachments/assets/b4f8384f-113b-47f7-95f2-397557e0c403" />
-<img width="1917" height="991" alt="Screenshot 2026-06-13 185218" src="https://github.com/user-attachments/assets/209bf771-5b63-4a3a-b7d6-edc4e5eabc10" />
-
-
----
 
 # 🛠 Troubleshooting
 
 ## 🛑 NoClassDefFoundError: org/thymeleaf/...
 
-### Root Cause
-An engineer embedded third-party compile dependencies inside the project POM tree structure. Eclipse Equinox cannot track nested class registries within raw `dropins/` structures without intricate bundle bridging definitions.
+**Root Cause**: An engineer embedded third-party compile dependencies inside the project POM tree structure. Eclipse Equinox cannot track nested class registries within raw dropins/ structures without intricate bundle bridging definitions.
 
-### Remediation
-Remove any external layout engine declarations. Revert to using the native variable concatenation methods built into `HtmlTemplates.java`.
-
----
+**Remediation**: Remove any external layout engine declarations. Revert to using the native variable concatenation methods built into HtmlTemplates.java.
 
 ## 🛑 Custom Code Execution Does Not Trigger
 
-### Root Cause
-Typographical class name mismatches inside configuration files, or failure to flush old compilation profiles out of the native Equinox runtime memory space.
+**Root Caus**: Typographical class name mismatches inside configuration files, or failure to flush old compilation profiles out of the native Equinox runtime memory space.
 
-### Remediation
-Double-check package routing paths in `deployment.toml`. Follow the Purge Cache deployment guidelines to clear server cache directories completely, then start up with the `--clean` flag.
-
----
+**Remediation**: Double-check package routing paths in deployment.toml. Follow the Purge Cache deployment guidelines to clear server cache directories completely, then start up with the --clean flag.
 
 ## 🛑 E-mails Drop Silently / Missing Fields
 
-### Root Cause
-Target platform developer profiles are missing primary system email claim mappings inside the user registry database.
+**Root Cause**: Target platform developer profiles are missing primary system email claim mappings inside the user registry database.
 
-### Remediation
-Connect to the Carbon Admin Interface:
-
-```text
-https://localhost:9443/carbon
-```
-
-Navigate to **Users and Roles**, open user profiles, and verify that the Email Address attributes are properly populated.
-
----
+**Remediation**: Connect to the Carbon Admin Interface (https://localhost:9443/carbon), navigate to Users and Roles, open user profiles, and verify that the Email Address attributes (http://wso2.org/claims/emailaddress) are properly populated.
 
 # 🔧 Extending the Solution
 
-## 1. Adding Alternative Lifecycle Events (e.g., API State Modification)
-
-To extend alternative event contexts (such as notifying subscribers when an API updates from `PUBLISHED` to `DEPRECATED`), replicate the core pattern:
+**1. Adding Alternative Lifecycle Events (e.g., API State Modification)**
+To extend alternative event contexts (such as notifying subscribers when an API updates from PUBLISHED to DEPRECATED), replicate the core pattern:
 
 ```java
 public class CustomAPIStateExecutor extends APIStateChangeSimpleWorkflowExecutor {
@@ -461,36 +418,26 @@ public class CustomAPIStateExecutor extends APIStateChangeSimpleWorkflowExecutor
         return resp;
     }
 }
+Append a new string signature mapping layout blocks inside HtmlTemplates.java.
+Update server mapping tree records using deployment.toml.
 ```
 
-Append a new string signature mapping layout blocks inside `HtmlTemplates.java`.
-
-Update server mapping tree records using `deployment.toml`.
-
----
-
-## 2. Externalizing Variables to Production Systems
-
+**2. Externalizing Variables to Production Systems**
 The design structure uses system property fallback architecture inside its execution core to prevent rebuilding code artifacts across deployment phases:
 
 ```java
 String smtpHost = System.getProperty("email.smtp.host", "localhost");
 String adminUser = System.getProperty("workflow.admin.username", "admin");
+To adjust these variables at server startup, inject properties into the runtime environment file (api-manager.sh or api-manager.bat) within the global JVM_ARGS collection:
 ```
 
-To adjust these variables at server startup, inject properties into the runtime environment file (`api-manager.sh` or `api-manager.bat`) within the global `JVM_ARGS` collection:
-
-```text
+```plaintext
 -Demail.smtp.host=smtp.internal-corporate-relay.com -Demail.smtp.port=25 -Dworkflow.admin.username=apim-sys-admin
 ```
 
----
-
 # 📜 License
 
-Distributed under the MIT License. For deep structural modifications, reference the `LICENSE` file in the repository root.
-
----
+Distributed under the MIT License. For deep structural modifications, reference the LICENSE file in the repository root.
 
 # 👨‍💻 Author
 

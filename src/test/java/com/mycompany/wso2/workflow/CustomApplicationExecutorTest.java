@@ -3,6 +3,7 @@ package com.mycompany.wso2.workflow;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.wso2.carbon.apimgt.api.WorkflowResponse;
@@ -20,7 +21,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ class CustomApplicationExecutorTest {
 
     private CustomApplicationExecutor executor;
     private ApplicationWorkflowDTO mockWorkflowDTO;
+    private Application mockApp;
 
     private MockedStatic<APIUtil> mockedApiUtil;
     private MockedStatic<ServiceReferenceHolder> mockedServiceRefHolder;
@@ -36,30 +38,32 @@ class CustomApplicationExecutorTest {
     private MockedStatic<ApiMgtDAO> mockedApiMgtDao;
 
     /**
-     * Reinitializes the target workflow executor class and configures mock environments,
-     * intercepting structural static dependencies, OSGi services, and underlying database
-     * singletons to guarantee isolation before running each test condition.
+     * Initializes the testing runtime environment prior to each test case execution by building the required
+     * mock objects, registering stubbed workflow data parameters, and configuring scoped static simulation
+     * boundaries for core WSO2 Carbon subsystem hooks.
      *
-     * @throws Exception If an error occurs during runtime mock object allocations.
+     * @throws Exception If an unexpected error scenario occurs during initial mock subsystem initialization phases.
      */
     @BeforeEach
     void setUp() throws Exception {
         executor = new CustomApplicationExecutor();
-
         mockWorkflowDTO = mock(ApplicationWorkflowDTO.class);
-        Application mockApp = mock(Application.class);
+        mockApp = mock(Application.class);
 
         when(mockWorkflowDTO.getStatus()).thenReturn(WorkflowStatus.APPROVED);
-
         when(mockWorkflowDTO.getApplication()).thenReturn(mockApp);
-        when(mockWorkflowDTO.getUserName()).thenReturn("dev_user");
-        when(mockWorkflowDTO.getTenantDomain()).thenReturn("carbon.super");
-        when(mockWorkflowDTO.getWorkflowReference()).thenReturn("1234");
-        when(mockApp.getName()).thenReturn("TestApp");
-        when(mockApp.getDescription()).thenReturn("My app description");
+        when(mockWorkflowDTO.getUserName()).thenReturn("compliance_developer");
+        when(mockWorkflowDTO.getTenantDomain()).thenReturn("production.tenant.org");
+
+        when(mockWorkflowDTO.getWorkflowReference()).thenReturn("998877");
+
+        when(mockApp.getName()).thenReturn("EnterpriseDataRouter");
+        when(mockApp.getTier()).thenReturn("PlatinumHighThroughput");
+        when(mockApp.getTokenType()).thenReturn("OAUTH-JWT");
+        when(mockApp.getDescription()).thenReturn("Core routing layer for secure microservice proxies.");
 
         mockedApiUtil = Mockito.mockStatic(APIUtil.class);
-        mockedApiUtil.when(() -> APIUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedApiUtil.when(() -> APIUtil.getTenantId(anyString())).thenReturn(404);
 
         RealmService mockRealmService = mock(RealmService.class);
         UserRealm mockUserRealm = mock(UserRealm.class);
@@ -68,8 +72,8 @@ class CustomApplicationExecutorTest {
         when(mockRealmService.getTenantUserRealm(anyInt())).thenReturn(mockUserRealm);
         when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
 
-        when(mockUserStoreManager.getUserClaimValue(eq("dev_user"), anyString(), isNull())).thenReturn("dev@example.com");
-        when(mockUserStoreManager.getUserClaimValue(eq("admin"), anyString(), isNull())).thenReturn("admin@example.com");
+        when(mockUserStoreManager.getUserClaimValue(eq("compliance_developer"), anyString(), isNull())).thenReturn("dev@mycompany.com");
+        when(mockUserStoreManager.getUserClaimValue(eq("admin"), anyString(), isNull())).thenReturn("security-audit@mycompany.com");
 
         ServiceReferenceHolder mockHolder = mock(ServiceReferenceHolder.class);
         when(mockHolder.getRealmService()).thenReturn(mockRealmService);
@@ -90,8 +94,8 @@ class CustomApplicationExecutorTest {
     }
 
     /**
-     * Explicitly releases and terminates all initialized dynamic static mock resource scopes
-     * following every test verification cycle to prevent thread context leaks.
+     * Standard teardown lifecycle routine designed to release static simulation contexts, closed mocks,
+     * and thread-local testing reference locks to preserve isolation boundaries between test runs.
      */
     @AfterEach
     void tearDown() {
@@ -104,40 +108,88 @@ class CustomApplicationExecutorTest {
     }
 
     /**
-     * Verifies that the custom executor runs smoothly under optimal operational states,
-     * successfully invoking base interceptors and triggering one email payload to the administrator
-     * and another to the creator.
+     * Validates that the custom initialization execution process triggers completely, handles mapping rules
+     * flawlessly, and successfully generates matching notification profiles containing complete application data
+     * elements for both administrative and developer entities.
      *
-     * @throws Exception If an unexpected error arises during data compilation steps.
+     * @throws Exception If an unhandled workflow context error bubbles out during the evaluation process.
      */
     @Test
-    void testExecuteSuccess() throws Exception {
+    @SuppressWarnings("unchecked")
+    void testExecuteApprovalGuaranteesAllDetailsArePresent() throws Exception {
         WorkflowResponse response = executor.execute(mockWorkflowDTO);
+        assertNotNull(response);
 
-        assertNotNull(response, "Workflow response should not be null");
+        ArgumentCaptor<Map> modelCaptor = ArgumentCaptor.forClass(Map.class);
 
-        mockedEmailUtil.verify(
-                () -> EmailUtil.sendHtmlEmail(eq("admin@example.com"), anyString(), eq("admin_application_created"), any(Map.class)),
-                Mockito.times(1)
-        );
-        mockedEmailUtil.verify(
-                () -> EmailUtil.sendHtmlEmail(eq("dev@example.com"), anyString(), eq("developer_application_created"), any(Map.class)),
-                Mockito.times(1)
-        );
+        mockedEmailUtil.verify(() -> EmailUtil.sendHtmlEmail(
+                eq("security-audit@mycompany.com"), anyString(), eq("admin_application_created"), modelCaptor.capture()), Mockito.times(1));
+
+        Map<String, Object> capturedModel = modelCaptor.getValue();
+        assertEquals("EnterpriseDataRouter", capturedModel.get("applicationName"));
+        assertEquals("compliance_developer", capturedModel.get("userName"));
+        assertEquals("production.tenant.org", capturedModel.get("tenantDomain"));
+        assertEquals("PlatinumHighThroughput", capturedModel.get("applicationTier"));
+        assertEquals("OAUTH-JWT", capturedModel.get("tokenType"));
+        assertEquals("Core routing layer for secure microservice proxies.", capturedModel.get("description"));
+        assertEquals("998877", capturedModel.get("workflowRef"));
+        assertNotNull(capturedModel.get("timestamp"));
+
+        mockedEmailUtil.verify(() -> EmailUtil.sendHtmlEmail(
+                eq("dev@mycompany.com"), anyString(), eq("developer_application_created"), any(Map.class)), Mockito.times(1));
     }
 
     /**
-     * Assures structural resilience by forcing a runtime exception inside the user lookup sequence,
-     * verifying that interceptor routines gracefully suppress inner faults and return valid tokens.
+     * Verifies that the workflow completion path correctly acts upon transactional rejection updates, mapping
+     * defensive and contextual template properties completely to alert system audit pools and developer mail accounts.
      *
-     * @throws Exception If an unhandled validation exception triggers outside expected thresholds.
+     * @throws Exception If data mapping errors occur within the validation pipelines.
      */
     @Test
-    void testExecuteWithInternalException() throws Exception {
-        mockedApiUtil.when(() -> APIUtil.getTenantId(anyString())).thenThrow(new RuntimeException("Simulated error"));
+    @SuppressWarnings("unchecked")
+    void testCompleteRejectionGuaranteesAllDetailsArePresent() throws Exception {
+        when(mockWorkflowDTO.getStatus()).thenReturn(WorkflowStatus.REJECTED);
 
-        WorkflowResponse response = executor.execute(mockWorkflowDTO);
+        WorkflowResponse response = executor.complete(mockWorkflowDTO);
+        assertNotNull(response);
 
-        assertNotNull(response, "Workflow response should not be null even when emails fail");
+        ArgumentCaptor<Map> modelCaptor = ArgumentCaptor.forClass(Map.class);
+
+        mockedEmailUtil.verify(() -> EmailUtil.sendHtmlEmail(
+                eq("security-audit@mycompany.com"), anyString(), eq("admin_application_rejected"), modelCaptor.capture()), Mockito.times(1));
+
+        Map<String, Object> capturedModel = modelCaptor.getValue();
+        assertEquals("EnterpriseDataRouter", capturedModel.get("applicationName"));
+        assertEquals("compliance_developer", capturedModel.get("userName"));
+        assertEquals("production.tenant.org", capturedModel.get("tenantDomain"));
+        assertEquals("PlatinumHighThroughput", capturedModel.get("applicationTier"));
+
+        mockedEmailUtil.verify(() -> EmailUtil.sendHtmlEmail(
+                eq("dev@mycompany.com"), anyString(), eq("developer_application_rejected"), any(Map.class)), Mockito.times(1));
+    }
+
+    /**
+     * Confirms that structural infrastructure anomalies occurring inside internal user data lookups are cleanly
+     * trapped and contained during execution tasks to ensure application creation remains functional.
+     *
+     * @throws Exception If secondary assertion validations fail inside the lifecycle run.
+     */
+    @Test
+    void testExecuteSuppressesExceptionsGracefully() throws Exception {
+        mockedApiUtil.when(() -> APIUtil.getTenantId(anyString())).thenThrow(new RuntimeException("OSGi Registry Fail"));
+        assertDoesNotThrow(() -> executor.execute(mockWorkflowDTO));
+    }
+
+    /**
+     * Ensures that connection-pool drops or external datastore timeouts raised throughout final notification execution
+     * callbacks do not crash or prevent completion processes from saving final application statuses.
+     *
+     * @throws Exception If secondary execution validations fail inside the lifecycle run.
+     */
+    @Test
+    void testCompleteSuppressesExceptionsGracefully() throws Exception {
+        when(mockWorkflowDTO.getStatus()).thenReturn(WorkflowStatus.REJECTED);
+        mockedApiUtil.when(() -> APIUtil.getTenantId(anyString())).thenThrow(new RuntimeException("DB Connection Pool Timeout"));
+        assertDoesNotThrow(() -> executor.complete(mockWorkflowDTO));
     }
 }

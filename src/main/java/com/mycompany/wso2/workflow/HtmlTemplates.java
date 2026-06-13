@@ -14,11 +14,16 @@ public class HtmlTemplates {
      */
     public static String render(String templateName, Map<String, Object> model) {
         switch (templateName) {
-            case "admin_application_created":    return adminApplicationCreated(model);
-            case "developer_application_created": return developerApplicationCreated(model);
-            case "admin_subscription_created":   return adminSubscriptionCreated(model);
+            case "admin_application_created":      return adminApplicationCreated(model);
+            case "developer_application_created":   return developerApplicationCreated(model);
+            case "admin_subscription_created":     return adminSubscriptionCreated(model);
             case "developer_subscription_created": return developerSubscriptionCreated(model);
             case "publisher_subscription_created": return publisherSubscriptionCreated(model);
+            // Rejection Scenarios Wiring
+            case "admin_application_rejected":     return adminApplicationRejected(model);
+            case "developer_application_rejected": return developerApplicationRejected(model);
+            case "admin_subscription_rejected":    return adminSubscriptionRejected(model);
+            case "developer_subscription_rejected": return developerSubscriptionRejected(model);
             default: return "<html><body><p>No template found: " + escape(templateName) + "</p></body></html>";
         }
     }
@@ -197,7 +202,7 @@ public class HtmlTemplates {
                 + row("API Name",   v(m, "apiName"))
                 + row("Version",    v(m, "apiVersion"))
                 + row("Provider",   v(m, "apiProvider"))
-                + row("Tier",       v(m, "tier"))
+                + row("Tier",       v(m, "tierName"))
                 + row("Timestamp",  v(m, "timestamp"))
                 + "</table>"
                 + "<div class=\"ref-box\"><strong>Workflow Reference:</strong> " + v(m, "workflowRef") + "</div>"
@@ -226,7 +231,7 @@ public class HtmlTemplates {
                 + row("Version",      v(m, "apiVersion"))
                 + row("Provider",     v(m, "apiProvider"))
                 + row("Application",  v(m, "applicationName"))
-                + row("Tier",         v(m, "tier"))
+                + row("Tier",         v(m, "tierName"))
                 + row("Subscribed At", v(m, "timestamp"))
                 + "</table>"
                 + "<div class=\"steps\" style=\"background:#f0fdf4;border:1px solid #bbf7d0;\">"
@@ -260,13 +265,127 @@ public class HtmlTemplates {
                 + "<table>"
                 + row("Subscriber",   v(m, "subscriber"))
                 + row("Application",  v(m, "applicationName"))
-                + row("Tier",         v(m, "tier"))
+                + row("Tier",         v(m, "tierName"))
                 + row("Tenant",       v(m, "tenantDomain"))
                 + row("Subscribed At", v(m, "timestamp"))
                 + "</table>"
                 + "<div style=\"background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 18px;margin-top:20px;font-size:13px;color:#0369a1;\">"
                 + "&#8505; This subscription was <strong>auto-approved</strong>. Review active subscriptions in the Publisher Portal under your API's <em>Subscriptions</em> tab."
                 + "</div>"
+                + "</div>"
+                + footer();
+    }
+
+    // ── Rejection Templates ─────────────────────────────────────────────────
+
+    /**
+     * Compiles a system security audit outline intended for administrative eyes summarizing
+     * descriptive metadata fields of an application creation workflow request that was explicitly declined.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return A fully populated administrative summary rejection layout template.
+     */
+    private static String adminApplicationRejected(Map<String, Object> m) {
+        return head("Application Request Rejected", "#450a0a", "#b91c1c")
+                + "<div class=\"header\"><h1>&#10060; Application Request Rejected</h1>"
+                + "<p>WSO2 API Manager &mdash; System Audit Log</p></div>"
+                + "<div class=\"body\">"
+                + "<span class=\"badge\" style=\"background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;\">APPLICATION DECLINED</span>"
+                + "<p>An application registration workspace request has been manually evaluated and <strong>declined</strong> by an administrative entity.</p>"
+                + "<table>"
+                + row("Application Name", v(m, "applicationName"))
+                + row("Requested By",     v(m, "userName"))
+                + row("Tenant Domain",    v(m, "tenantDomain"))
+                + row("Throttling Tier",  v(m, "applicationTier"))
+                + row("Token Type",       v(m, "tokenType"))
+                + row("Description",      v(m, "description"))
+                + row("Decision Time",    v(m, "timestamp"))
+                + "</table>"
+                + "<div class=\"ref-box\" style=\"background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b;\"><strong>Workflow Reference:</strong> " + v(m, "workflowRef") + "</div>"
+                + "</div>"
+                + footer();
+    }
+
+    /**
+     * Compiles an administrative rejection notice dispatched to developer accounts
+     * detailing safety parameters regarding a turned down application workspace request.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return A customized system restriction layout template targeting the developer.
+     */
+    private static String developerApplicationRejected(Map<String, Object> m) {
+        return head("Application Workspace Declined", "#b91c1c", "#ef4444")
+                + "<div class=\"header\"><h1>&#128721; Application Workspace Declined</h1>"
+                + "<p>WSO2 API Manager &mdash; Developer Portal</p></div>"
+                + "<div class=\"body\">"
+                + "<span class=\"badge\" style=\"background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;\">&#10060; DECLINED</span>"
+                + "<p>Hi <strong>" + v(m, "userName") + "</strong>,</p>"
+                + "<p>Your administrative request to provision the application workspace <strong>" + v(m, "applicationName") + "</strong> was evaluated and turned down during verification compliance checks.</p>"
+                + "<table>"
+                + row("Application Name", v(m, "applicationName"))
+                + row("Target Domain",    v(m, "tenantDomain"))
+                + row("Timestamp",        v(m, "timestamp"))
+                + "</table>"
+                + "<p style=\"margin-top:20px;font-size:13px;color:#666;\">Please review your structural workspace parameters or contact your IT infrastructure solutions architecture management desk if you believe this evaluation was an error.</p>"
+                + "</div>"
+                + footer();
+    }
+
+    /**
+     * Formats a security audit tracking document mapping dynamic resource dependency mappings
+     * for administrative evaluation loops when an API subscription linking block is blocked.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return An automated subscription rejection overview logging layout map design.
+     */
+    private static String adminSubscriptionRejected(Map<String, Object> m) {
+        return head("API Subscription Denied", "#450a0a", "#b91c1c")
+                + "<div class=\"header\"><h1>&#10060; API Subscription Denied</h1>"
+                + "<p>WSO2 API Manager &mdash; System Audit Log</p></div>"
+                + "<div class=\"body\">"
+                + "<span class=\"badge\" style=\"background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;\">SUBSCRIPTION BLOCKED</span>"
+                + "<p>An administrative execution cycle has manually evaluated and <strong>declined</strong> an internal API consumer binding connection mapping.</p>"
+                + "<p style=\"font-size:12px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.8px;\">Target Context Details</p>"
+                + "<table>"
+                + row("Subscriber",  v(m, "subscriber"))
+                + row("Application", v(m, "applicationName"))
+                + row("Tenant Space", v(m, "tenantDomain"))
+                + "</table>"
+                + "<p style=\"font-size:12px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.8px;\">Requested Asset Details</p>"
+                + "<table>"
+                + row("API Resource", v(m, "apiName"))
+                + row("Asset Version", v(m, "apiVersion"))
+                + row("API Provider",  v(m, "apiProvider"))
+                + row("Decision Time", v(m, "timestamp"))
+                + "</table>"
+                + "<div class=\"ref-box\" style=\"background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b;\"><strong>Workflow Reference:</strong> " + v(m, "workflowRef") + "</div>"
+                + "</div>"
+                + footer();
+    }
+
+    /**
+     * Generates a structural restriction notice manifest detailing alternative routing parameters
+     * delivered to developer accounts whose API link request is denied by system resource managers.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return An operational verification restriction message layout card.
+     */
+    private static String developerSubscriptionRejected(Map<String, Object> m) {
+        return head("API Access Request Declined", "#b91c1c", "#ef4444")
+                + "<div class=\"header\"><h1>&#128721; API Access Request Declined</h1>"
+                + "<p>WSO2 API Manager &mdash; Developer Portal</p></div>"
+                + "<div class=\"body\">"
+                + "<span class=\"badge\" style=\"background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;\">&#10060; DECLINED</span>"
+                + "<p>Hi <strong>" + v(m, "subscriber") + "</strong>,</p>"
+                + "<p>Your request to map your application workspace <strong>" + v(m, "applicationName") + "</strong> onto the core API proxy <strong>" + v(m, "apiName") + " (v" + v(m, "apiVersion") + ")</strong> was turned down by system resource managers.</p>"
+                + "<table>"
+                + row("Target Resource API", v(m, "apiName"))
+                + row("Target Version",      v(m, "apiVersion"))
+                + row("Bound Via Application", v(m, "applicationName"))
+                + row("Requested Policy Tier", v(m, "tierName"))
+                + row("Decision Time",        v(m, "timestamp"))
+                + "</table>"
+                + "<p style=\"margin-top:20px;font-size:13px;color:#666;\">If establishing this access path is vital for continuous programmatic operational workflows, please re-apply onto the asset detailing clear usage compliance metrics inside your access request notes field configuration.</p>"
                 + "</div>"
                 + footer();
     }
