@@ -18,6 +18,16 @@ public class EmailUtil {
 
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    /**
+     * Submits an email compilation and transmission task to an asynchronous
+     * single-threaded background worker pool, which processes the template rendering
+     * and manages SMTP network communications without blocking the primary request path.
+     *
+     * @param toAddress    The destination email address of the message recipient.
+     * @param subject      The text content to populate into the email subject line.
+     * @param templateName The key identifier corresponding to the chosen layout design mapping.
+     * @param model        The dataset dictionary containing parameters to bind into the HTML content variables.
+     */
     public static void sendHtmlEmail(final String toAddress, final String subject,
                                      final String templateName, final Map<String, Object> model) {
         executorService.submit(new Runnable() {

@@ -18,6 +18,15 @@ import java.util.Map;
 public class CustomApplicationExecutor extends ApplicationCreationSimpleWorkflowExecutor {
     private static final Log log = LogFactory.getLog(CustomApplicationExecutor.class);
 
+    /**
+     * Intercepts the WSO2 application creation lifecycle, triggers the standard automated
+     * approval process via the parent class, extracts descriptive metadata, and dispatches
+     * customized HTML email notifications asynchronously to both the administrator and the creator.
+     *
+     * @param workflowDTO The data transfer object containing context regarding the workflow instance.
+     * @return The standard workflow verification response indicating success or failure status.
+     * @throws WorkflowException If a critical validation error occurs inside the core WSO2 engine.
+     */
     @Override
     public WorkflowResponse execute(WorkflowDTO workflowDTO) throws WorkflowException {
         log.info("Executing custom HTML interceptor for Application Creation Workflow...");
@@ -33,7 +42,6 @@ public class CustomApplicationExecutor extends ApplicationCreationSimpleWorkflow
 
             String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-            // Build Template Data Model Map
             Map<String, Object> model = new HashMap<>();
             model.put("applicationName", appDTO.getApplication().getName());
             model.put("userName", creator);
@@ -44,7 +52,6 @@ public class CustomApplicationExecutor extends ApplicationCreationSimpleWorkflow
             model.put("timestamp", timestamp);
             model.put("workflowRef", appDTO.getWorkflowReference());
 
-            // Send HTML Notifications
             if (adminEmail != null) {
                 EmailUtil.sendHtmlEmail(adminEmail, "⚠️ New Application Created", "admin_application_created", model);
             }
@@ -58,6 +65,14 @@ public class CustomApplicationExecutor extends ApplicationCreationSimpleWorkflow
         return response;
     }
 
+    /**
+     * Queries the active tenant user realm via OSGi services to locate the specified
+     * user store manager and extract the registered email claim mapping for a user identity.
+     *
+     * @param username The identifier of the specific system user whose email is requested.
+     * @param tenantDomain The domain boundary string separating the multi-tenant system space.
+     * @return The text value of the email claim mapping if resolved, or null if an error occurs.
+     */
     private String getEmailInternally(String username, String tenantDomain) {
         try {
             int tenantId = APIUtil.getTenantId(tenantDomain);

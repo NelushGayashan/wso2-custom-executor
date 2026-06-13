@@ -18,6 +18,16 @@ import java.util.Map;
 public class CustomSubscriptionExecutor extends SubscriptionCreationSimpleWorkflowExecutor {
     private static final Log log = LogFactory.getLog(CustomSubscriptionExecutor.class);
 
+    /**
+     * Intercepts the WSO2 API subscription lifecycle, handles standard data persistence
+     * mechanisms via the parent class, compiles subscription context parameters, and
+     * triggers multiple asynchronous HTML email dispatches targeting the system administrator,
+     * the API publisher, and the consumer developer.
+     *
+     * @param workflowDTO The data transfer object containing context regarding the workflow instance.
+     * @return The standard workflow verification response indicating success or failure status.
+     * @throws WorkflowException If a critical validation error occurs inside the core WSO2 engine.
+     */
     @Override
     public WorkflowResponse execute(WorkflowDTO workflowDTO) throws WorkflowException {
         log.info("Executing custom HTML interceptor for Subscription Creation Workflow...");
@@ -35,7 +45,6 @@ public class CustomSubscriptionExecutor extends SubscriptionCreationSimpleWorkfl
 
             String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-            // Build Template Data Model Map
             Map<String, Object> model = new HashMap<>();
             model.put("subscriber", subscriber);
             model.put("applicationName", subDTO.getApplicationName());
@@ -47,7 +56,6 @@ public class CustomSubscriptionExecutor extends SubscriptionCreationSimpleWorkfl
             model.put("timestamp", timestamp);
             model.put("workflowRef", subDTO.getWorkflowReference());
 
-            // Send HTML Notifications
             if (adminEmail != null) {
                 EmailUtil.sendHtmlEmail(adminEmail, "🔗 New API Subscription", "admin_subscription_created", model);
             }
@@ -64,6 +72,15 @@ public class CustomSubscriptionExecutor extends SubscriptionCreationSimpleWorkfl
         return response;
     }
 
+    /**
+     * Connects to the primary tenant registry domain via active OSGi runtime hooks,
+     * initializes the matching User Store manager instance, and extracts the explicit
+     * email claim URI mapping associated with the queried target username.
+     *
+     * @param username The identifier of the specific system user whose email is requested.
+     * @param tenantDomain The domain boundary string separating the multi-tenant system space.
+     * @return The text value of the email claim mapping if resolved, or null if an error occurs.
+     */
     private String getEmailInternally(String username, String tenantDomain) {
         try {
             int tenantId = APIUtil.getTenantId(tenantDomain);

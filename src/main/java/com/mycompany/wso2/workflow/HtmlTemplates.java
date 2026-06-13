@@ -4,6 +4,14 @@ import java.util.Map;
 
 public class HtmlTemplates {
 
+    /**
+     * Evaluates the incoming template identity key against a conditional selection structure
+     * and forwards the provided data model variables to the appropriate rendering block.
+     *
+     * @param templateName The string identifier key matching the target layout design mapping.
+     * @param model        The dynamic database collection mapping parameters to their values.
+     * @return The final compiled HTML string content payload.
+     */
     public static String render(String templateName, Map<String, Object> model) {
         switch (templateName) {
             case "admin_application_created":    return adminApplicationCreated(model);
@@ -17,11 +25,26 @@ public class HtmlTemplates {
 
     // ── Shared helpers ──────────────────────────────────────────────────────
 
+    /**
+     * Safely reads an element from the text parameter storage layout, returning an
+     * escaping-safe data representation or a standard fallback hyphen if the value is missing.
+     *
+     * @param m   The source parameter value map object collection.
+     * @param key The specific target text attribute lookup index.
+     * @return The resolved attribute text or a structural placeholder hyphen.
+     */
     private static String v(Map<String, Object> m, String key) {
         Object val = m.get(key);
         return val != null ? escape(val.toString()) : "-";
     }
 
+    /**
+     * Sanitizes raw text parameters by converting reserved HTML syntax elements
+     * into safe entity characters to prevent cross-site scripting risks or visual corruption.
+     *
+     * @param s The raw string text structure that needs validation filtering.
+     * @return A safely encoded string text block free of terminal markup bindings.
+     */
     private static String escape(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;")
@@ -30,6 +53,15 @@ public class HtmlTemplates {
                 .replace("\"", "&quot;");
     }
 
+    /**
+     * Compiles an administrative layout envelope containing general page markup structures,
+     * document scaling parameters, and embedded corporate color identity stylesheet styles.
+     *
+     * @param title        The text string title descriptor of the notification envelope.
+     * @param gradientFrom The starting hex value formatting the header decoration area.
+     * @param gradientTo   The ending hex value formatting the header decoration area.
+     * @return The opened header layout definition framework structure.
+     */
     private static String head(String title, String gradientFrom, String gradientTo) {
         return "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"/><title>" + escape(title) + "</title>"
                 + "<style>"
@@ -53,17 +85,38 @@ public class HtmlTemplates {
                 + "</style></head><body><div class=\"wrapper\">";
     }
 
+    /**
+     * Builds and appends unified tracking footer copy along with closing structural tags
+     * to safely seal open document body structures.
+     *
+     * @return The final terminating section block string configuration.
+     */
     private static String footer() {
         return "<div class=\"footer\">Automated notification from WSO2 API Manager &mdash; Do not reply.</div>"
                 + "</div></body></html>";
     }
 
+    /**
+     * Packages a descriptive text metric title label and its related variable parameter value
+     * cleanly inside a standardized metadata data-grid entry table row.
+     *
+     * @param label The descriptive header label naming the parameter item context.
+     * @param value The value text or identifier associated with the given item label.
+     * @return A completed table-row string structure block.
+     */
     private static String row(String label, String value) {
         return "<tr><td>" + escape(label) + "</td><td>" + value + "</td></tr>";
     }
 
     // ── Templates ───────────────────────────────────────────────────────────
 
+    /**
+     * Compiles an alert document outline intended for administration eyes summarizing
+     * tracking metadata of a newly approved application framework setup.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return A fully populated administrative summary layout template.
+     */
     private static String adminApplicationCreated(Map<String, Object> m) {
         return head("New Application Created", "#1a3c5e", "#0f6cbd")
                 + "<div class=\"header\"><h1>&#9888; New Application Created</h1>"
@@ -85,6 +138,13 @@ public class HtmlTemplates {
                 + footer();
     }
 
+    /**
+     * Compiles a confirmation welcome receipt card dispatched to developer accounts
+     * detailing successful application workspace onboarding steps.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return A customized welcome workspace layout template targeting the developer.
+     */
     private static String developerApplicationCreated(Map<String, Object> m) {
         return head("Application Created Successfully", "#0f6cbd", "#38bdf8")
                 + "<div class=\"header\"><h1>&#10003; Application Created Successfully</h1>"
@@ -112,6 +172,13 @@ public class HtmlTemplates {
                 + footer();
     }
 
+    /**
+     * Formats a systems tracking log dashboard notification mapping multi-layered dependency parameters
+     * for administrative audit review loops upon new API subscription events.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return An automated subscription overview logging layout map design.
+     */
     private static String adminSubscriptionCreated(Map<String, Object> m) {
         return head("New API Subscription", "#1a3c5e", "#7c3aed")
                 + "<div class=\"header\"><h1>&#128279; New API Subscription</h1>"
@@ -138,6 +205,13 @@ public class HtmlTemplates {
                 + footer();
     }
 
+    /**
+     * Generates a structural confirmation manifest card including sandbox keys instructions delivered
+     * to developers who activate an API consumer link.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return An operational verification metadata message layout card.
+     */
     private static String developerSubscriptionCreated(Map<String, Object> m) {
         return head("Subscription Confirmed", "#059669", "#10b981")
                 + "<div class=\"header\"><h1>&#10003; Subscription Confirmed</h1>"
@@ -167,6 +241,13 @@ public class HtmlTemplates {
                 + footer();
     }
 
+    /**
+     * Formats an informational metric confirmation summary designed for API publishers,
+     * highlighting data entry parameters regarding newly connected third-party applications.
+     *
+     * @param m The source collection dictionary populated with tracking system context values.
+     * @return A targeted client consumer tracking notification layout.
+     */
     private static String publisherSubscriptionCreated(Map<String, Object> m) {
         return head("New Subscriber for Your API", "#0f6cbd", "#0ea5e9")
                 + "<div class=\"header\"><h1>&#128276; New Subscriber for Your API</h1>"
