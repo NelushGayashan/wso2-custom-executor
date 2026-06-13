@@ -360,9 +360,26 @@ Inbound Transfer Endpoint (SMTP): localhost:1025
 
 Management Inspection Interface (HTTP Portal): http://localhost:8025
 
+<img width="1917" height="987" alt="Screenshot 2026-06-13 213923" src="https://github.com/user-attachments/assets/b7762e2b-134f-4e00-9000-cc48f58bf6eb" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 213900" src="https://github.com/user-attachments/assets/f62aff29-319d-43ca-a7f4-0f07d865c24a" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 213835" src="https://github.com/user-attachments/assets/0913a1c4-9537-4966-ae62-104515db06d3" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185900" src="https://github.com/user-attachments/assets/105a8005-4389-4880-82a2-a9d8275265bd" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185837" src="https://github.com/user-attachments/assets/a77c968a-7c3e-43a2-8283-c8cf8971708f" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185747" src="https://github.com/user-attachments/assets/e5556d57-8808-4117-a4cd-9d0d35cfcc9c" />
+<img width="1917" height="991" alt="Screenshot 2026-06-13 185723" src="https://github.com/user-attachments/assets/f09e4461-ca1e-468d-a47a-9a680a127f3d" />
+<img width="1917" height="990" alt="Screenshot 2026-06-13 185659" src="https://github.com/user-attachments/assets/4cb9d197-9829-4850-a44f-f6aef8357b64" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185607" src="https://github.com/user-attachments/assets/bad4b927-d601-4033-a354-258ef534edc1" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 213946" src="https://github.com/user-attachments/assets/6829e3ee-34f3-4b4c-b40b-48c1be7956b7" />
+
 # 🧪 Testing
 
 The solution provides a fully decoupled unit and pipeline test framework. Both test files (CustomApplicationExecutorTest and CustomSubscriptionExecutorTest) feature clean Javadoc tracking headers and leverage advanced static system mocking via Mockito to simulate WSO2 identity claim resolutions safely. Additional tests (EmailUtilTest and HtmlTemplatesTest) provide robust coverage for template rendering capabilities and asynchronous error handling.
+
+<img width="1917" height="992" alt="Screenshot 2026-06-13 185434" src="https://github.com/user-attachments/assets/da1dfb38-0af1-4e21-ac23-5a7490b7271b" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185354" src="https://github.com/user-attachments/assets/437e2db0-5e05-4556-977f-ce3f3fca1445" />
+<img width="1917" height="991" alt="Screenshot 2026-06-13 185218" src="https://github.com/user-attachments/assets/94b917cb-ddb8-4eeb-957e-5bb8adb65386" />
+<img width="1917" height="987" alt="Screenshot 2026-06-13 185510" src="https://github.com/user-attachments/assets/50eb49dc-d56b-4371-bc32-820e260ac67d" />
+
 
 [!NOTE]
 Defensive Mocking Realities: Unit tests explicitly supply numeric values like "998877" and "776655" for workflowReference fields. This completely isolates code behavior and mirrors production configurations where the core parser handles reference IDs numerically.
