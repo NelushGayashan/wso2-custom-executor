@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.mycompany.wso2</groupId>
+    <artifactId>com.mycompany.wso2.workflow</artifactId>
+    <version>1.0.0</version>
+
+    <!--
+        Packaging type "bundle" activates the maven-bundle-plugin (Apache Felix) to produce
+        an OSGi-compliant JAR with a MANIFEST.MF containing Bundle-SymbolicName, Export-Package,
+        and Import-Package headers required by WSO2's Eclipse Equinox container.
+    -->
+    <packaging>bundle</packaging>
+
+    <name>WSO2 Custom Workflow Extensions</name>
+
+    <!-- ================================================================
+         Global Build Properties
+         ================================================================ -->
+    <properties>
+        <!-- Java 17 language level — required for records, sealed classes, and
+             pattern-matching previews used across the workflow source set. -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+
+        <!-- Enforce UTF-8 throughout the build to prevent platform-specific
+             encoding differences corrupting HTML template string literals. -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- WSO2 Carbon APIM version aligned with the target APIM 4.2.0 runtime.
+             Bump this property alone to upgrade all APIM compile-time stubs. -->
+        <carbon.apimgt.version>9.28.0</carbon.apimgt.version>
+
+        <!-- WSO2 Carbon Kernel version providing the OSGi user-store and
+             utility APIs consumed by the workflow executors at runtime. -->
+        <carbon.kernel.version>4.6.3</carbon.kernel.version>
+    </properties>
+
+    <!-- ================================================================
+         Repositories
+         ================================================================ -->
+    <repositories>
+        <!--
+            WSO2 public Nexus mirror — hosts WSO2 Carbon artefacts
+            (org.wso2.carbon.*) that are not published to Maven Central.
+            Release-only; snapshot resolution is intentionally disabled to
+            prevent accidental consumption of unstable builds.
+        -->
+        <repository>
+            <id>wso2-nexus</id>
+            <name>WSO2 Internal Repository</name>
+            <url>https://maven.wso2.org/nexus/content/groups/wso2-public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
+    <!-- ================================================================
+         Dependencies
+         ================================================================ -->
+    <dependencies>
+
+        <!-- ── WSO2 APIM Runtime APIs (provided at OSGi container level) ── -->
+
+        <!--
+            org.wso2.carbon.apimgt.impl — APIM implementation bundle.
+            Provides the base workflow executor classes extended by this project:
+              - ApplicationCreationApprovalWorkflowExecutor
+              - SubscriptionCreationApprovalWorkflowExecutor
+            Scoped "provided": the APIM server exports this bundle at runtime;
+            it must NOT be embedded in the dropins JAR to avoid classloader conflicts.
+        -->
+        <dependency>
+            <groupId>org.wso2.carbon.apimgt</groupId>
+            <artifactId>org.wso2.carbon.apimgt.impl</artifactId>
+            <version>${carbon.apimgt.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            org.wso2.carbon.apimgt.api — APIM public API bundle.
+            Provides the WorkflowResponse and WorkflowException contracts
+            declared in execute() and complete() method signatures.
+            Scoped "provided" for the same OSGi boundary reason as the impl bundle.
+        -->
+        <dependency>
+            <groupId>org.wso2.carbon.apimgt</groupId>
+            <artifactId>org.wso2.carbon.apimgt.api</artifactId>
+            <version>${carbon.apimgt.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            org.wso2.carbon.user.core — Carbon Kernel user-store APIs.
+            Used by getEmailInternally() to query the email claim
+            (http://wso2.org/claims/emailaddress) via UserStoreManager.
+            Scoped "provided": exported by the Carbon runtime at deployment time.
+        -->
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.user.core</artifactId>
+            <version>${carbon.kernel.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            org.wso2.carbon.utils — Carbon Kernel utility bundle.
+            Supplies APIUtil.getTenantId() used when resolving the tenant
+            realm before querying the user store for email claims.
+            Scoped "provided": available in the Carbon OSGi runtime.
+        -->
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.utils</artifactId>
+            <version>${carbon.kernel.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            commons-logging — Apache Commons Logging facade.
+            Used for all Log / LogFactory calls throughout the executor classes.
+            Version range [1.2, 2) is declared in Import-Package to stay
+            compatible with whatever version the Carbon runtime ships.
+            Scoped "provided": the Carbon container exports this at runtime.
+        -->
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            javax.mail-api — JavaMail API specification (interfaces only, no implementation).
+            Used by EmailUtil to compose and dispatch HTML email via SMTP
+            (Session, MimeMessage, Transport, InternetAddress, Message).
+            Scoped "provided": WSO2 ships a javax.mail implementation bundle in the
+            Carbon runtime; embedding this JAR in the OSGi bundle would cause
+            package-split violations at resolution time.
+        -->
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>javax.mail-api</artifactId>
+            <version>1.6.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ── Test-only Dependencies ── -->
+
+        <!--
+            com.sun.mail:javax.mail — Reference implementation of the JavaMail API.
+            Provides the concrete Transport.send() implementation needed to
+            actually dispatch messages in unit tests against the SubEthaSMTP Wiser
+            in-process SMTP server. Scoped "test" — never embedded in the bundle.
+            Note: this artifact includes both the API and the implementation,
+            making it self-contained for the test classpath.
+        -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            junit-jupiter-engine — JUnit 5 test engine.
+            Discovers and executes @Test, @Nested, and @ParameterizedTest methods
+            declared across CustomApplicationExecutorTest, CustomSubscriptionExecutorTest,
+            and HtmlTemplatesTest. Required alongside junit-jupiter-params for
+            full JUnit Platform support.
+        -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            junit-jupiter-params — JUnit 5 parameterized test support.
+            Enables @ParameterizedTest + @MethodSource used in HtmlTemplatesTest
+            to run XSS payload assertions across multiple injection vectors
+            without duplicating test method bodies.
+        -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            mockito-core — Mockito mocking framework (v5, supports Java 17+).
+            Used to mock static utility classes (APIUtil, ServiceReferenceHolder,
+            EmailUtil, ApiMgtDAO) and WSO2 infrastructure interfaces (RealmService,
+            UserRealm, UserStoreManager) so all executor unit tests run hermetically
+            with zero WSO2 runtime dependency. Mockito.mockStatic() requires the
+            mockito-inline agent bundled in this artefact from v5 onwards.
+        -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            subethasmtp — SubEthaSMTP in-process SMTP server (Wiser).
+            Provides a lightweight, embedded SMTP listener for integration-level
+            email dispatch tests, replacing GreenMail which was incompatible due to
+            jakarta.mail vs javax.mail classloader conflicts in this project's
+            OSGi-constrained dependency graph.
+        -->
+        <dependency>
+            <groupId>org.subethamail</groupId>
+            <artifactId>subethasmtp</artifactId>
+            <version>3.1.7</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            slf4j-simple — Minimal SLF4J binding for test output.
+            SubEthaSMTP depends on SLF4J; this binding routes its log output to
+            stdout during test runs without pulling in Logback or Log4j2.
+            Scoped "test" — no impact on production OSGi classloading.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.13</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ================================================================
+         Build Plugins
+         ================================================================ -->
+    <build>
+        <plugins>
+
+            <!--
+                maven-enforcer-plugin — Build environment guard.
+                Enforces that the build JDK is in the [11, 18) range, ensuring
+                compatibility with the Carbon runtime's supported JVM versions while
+                allowing Java 17 LTS features used in the source.
+                Fails fast at validate phase if the wrong JDK is active, preventing
+                silent bytecode incompatibilities from reaching the WSO2 server.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-jdk-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[11,18)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--
+                maven-compiler-plugin — Java source compilation.
+                Compiles all sources to Java 17 bytecode (release 17 effective).
+                Version 3.11.0 is the minimum that reliably handles Java 17 preview
+                features and annotation processing used by Mockito's agent at
+                compile time. Source/target values are inherited from properties above.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <!--
+                maven-surefire-plugin — JUnit 5 test runner.
+                Version 3.0.0-M9 has native JUnit Platform support; no additional
+                surefire-junit5 bridge artefact is required.
+                "-Xshare:off" disables JVM class data sharing (CDS), which can
+                cause Mockito's byte-buddy instrumentation agent to misidentify
+                already-loaded classes when static mocks are opened and closed
+                across @BeforeEach / @AfterEach boundaries.
+                "@{argLine}" is a late-binding placeholder populated by the JaCoCo
+                prepare-agent goal so coverage instrumentation and surefire's own
+                JVM args are composed correctly without overwriting each other.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M9</version>
+                <configuration>
+                    <argLine>@{argLine} -Xshare:off</argLine>
+                </configuration>
+            </plugin>
+
+            <!--
+                jacoco-maven-plugin — Code coverage instrumentation and reporting.
+                Two executions are configured:
+                  1. prepare-agent (default phase: initialize) — attaches the JaCoCo
+                     Java agent to the Surefire JVM by writing its -javaagent flag
+                     into the "argLine" property, which maven-surefire-plugin picks
+                     up via the @{argLine} reference above.
+                  2. report (phase: test) — generates an HTML + XML coverage report
+                     under target/site/jacoco/ after all tests have run, consumable
+                     by CI dashboards or SonarQube without a separate verify step.
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.8</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <propertyName>argLine</propertyName>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--
+                maven-bundle-plugin (Apache Felix) — OSGi bundle manifest generation.
+                The "bundle" packaging type activated at the top of this POM delegates
+                JAR assembly to this plugin, which generates the OSGi-compliant
+                MANIFEST.MF that WSO2's Equinox container reads at bundle resolution time.
+
+                Key manifest instructions:
+                  Bundle-SymbolicName — unique OSGi identity; set to the Maven artifactId
+                    so the bundle is unambiguously addressable in the Equinox console.
+
+                  Export-Package — makes all classes in com.mycompany.wso2.workflow
+                    visible to other bundles in the same OSGi runtime. Required so the
+                    Carbon APIM framework can load CustomApplicationExecutor and
+                    CustomSubscriptionExecutor via the workflow extension mechanism.
+
+                  Import-Package — declares runtime package dependencies the bundle
+                    resolves against already-installed bundles in the Carbon OSGi
+                    container, rather than embedding duplicates:
+                      • org.wso2.carbon.apimgt.impl.workflow.* — base executor classes
+                      • org.wso2.carbon.apimgt.impl.* / .api.* — DTO and API contracts
+                      • org.wso2.carbon.user.core.* — UserStoreManager, RealmService
+                      • org.wso2.carbon.utils.* — APIUtil tenant helpers
+                      • org.apache.commons.logging [1.2,2) — version-ranged to tolerate
+                        minor version drift in the Carbon commons-logging bundle
+                      • javax.mail [1.6,2) — resolved against the JavaMail bundle
+                        already present in WSO2's dropins or plugins directory
+                      • *;resolution:=optional — any unresolved package import is
+                        treated as non-fatal, preventing bundle resolution failures
+                        for optional classpath entries (e.g. test-only artefacts
+                        that are absent from the production container).
+            -->
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>5.1.8</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Bundle-Name>${project.name}</Bundle-Name>
+                        <Export-Package>com.mycompany.wso2.workflow.*</Export-Package>
+                        <Import-Package>
+                            org.wso2.carbon.apimgt.impl.workflow.*,
+                            org.wso2.carbon.apimgt.impl.*,
+                            org.wso2.carbon.apimgt.api.*,
+                            org.wso2.carbon.user.core.*,
+                            org.wso2.carbon.utils.*,
+                            org.apache.commons.logging.*;version="[1.2,2)",
+                            javax.mail.*;version="[1.6,2)",
+                            *;resolution:=optional
+                        </Import-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>
